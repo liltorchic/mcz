@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://duk86u6usrlug"]
+
+[ext_resource type="Script" path="res://World.gd" id="1_mp8si"]
+[ext_resource type="Script" path="res://free_camera.gd" id="2_sentv"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="World" type="Node3D" parent="."]
+script = ExtResource("1_mp8si")
+
+[node name="Camera3D" type="Camera3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0117006, 53.9554, 0.0137715)
+script = ExtResource("2_sentv")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 129.334, 551.473, 82.1164)
+light_energy = 16.0
+light_indirect_energy = 11.323
+light_angular_distance = 22.06
+shadow_enabled = true

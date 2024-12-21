@@ -4,3 +4,7 @@
 .tmp
 .import
 /android/
+*.godot
+*.tmp
+*.svg
+*.import
