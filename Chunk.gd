@@ -6,7 +6,7 @@ var noise: FastNoiseLite
 var chunk_size: int
 var chunk_data = []
 
-var isEmpty
+var isEmpty: bool # True when no visible blocks are present
 var y_slice_dict = {}
 
 func _init(_noise, _x,_y, _z, _chunk_size):
@@ -16,6 +16,7 @@ func _init(_noise, _x,_y, _z, _chunk_size):
 	self.position.y = _y
 	self.position.z = _z
 	self.chunk_size = _chunk_size
+	self.isEmpty = true
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -51,6 +52,8 @@ func load_data():
 				if(w > y_index):
 					chunk_data[cy][cx][cz] = 1
 					counter = counter + 1
+					if(isEmpty):
+						isEmpty = false
 				else:
 					chunk_data[cy][cx][cz] = 0		
 		y_slice_dict[cy] = counter

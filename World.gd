@@ -29,7 +29,7 @@ func _ready():
 		var thread = Thread.new()
 		thread_pool.append(thread)
 
-	var radius = 3
+	var radius = 6
 
 	for x in range(radius):
 		for z in range(radius):
@@ -59,7 +59,7 @@ func _process(delta):
 	for position in queued_chunks:
 		var p:Vector3 = position
 		add_chunk(p.x,p.y,p.z)
-		print(position)
+		
 
 		
 func add_chunk(x,y, z):
@@ -95,9 +95,8 @@ func _load_chunk_async(arr):
 	var y = arr[1] 
 	var z = arr[2]
 	var key = str(x)+ "," + str(y) + "," + str(z)
-	var chunk:Chunk
+	var chunk: Chunk
 	
-		#print("generating new chunk at " + str(x)+ "," + str(y) + "," + str(z))
 	chunk = Chunk.new(noise, x * chunk_size, y * chunk_size,z * chunk_size, chunk_size)
 	chunk.position = Vector3(x * chunk_size , y * chunk_size, z * chunk_size)
 	chunk.load_data()
