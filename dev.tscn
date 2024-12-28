@@ -13,14 +13,37 @@ script = ExtResource("1_mp8si")
 script = ExtResource("2_3y8d5")
 
 [node name="Camera3D" type="Camera3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0117006, 53.9554, 0.0137715)
 script = ExtResource("2_sentv")
+
+[node name="Label" type="Label" parent="World/Camera3D"]
+offset_right = 136.0
+offset_bottom = 139.0
+text = " player block pos
+ player chunk pos"
+horizontal_alignment = 2
+
+[node name="Label2" type="Label" parent="World/Camera3D"]
+offset_left = 138.0
+offset_top = 2.0
+offset_right = 178.0
+offset_bottom = 25.0
+
+[node name="Label3" type="Label" parent="World/Camera3D"]
+offset_left = 141.0
+offset_top = 30.0
+offset_right = 218.0
+offset_bottom = 53.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 129.334, 551.473, 82.1164)
-light_energy = 16.0
-light_indirect_energy = 11.323
+light_color = Color(1, 1, 0.74902, 1)
+light_energy = 12.8
+light_indirect_energy = 5.856
 light_angular_distance = 22.06
 shadow_enabled = true
+shadow_bias = 0.517
+shadow_normal_bias = 0.833
+shadow_blur = 4.833
+directional_shadow_mode = 0
 
 [connection signal="chunk_loaded" from="World" to="World/MeshBuilder" method="_on_world_chunk_loaded"]

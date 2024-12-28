@@ -1,0 +1,12 @@
+
+add chunk neibour detection and communication
+regions
+simple gui
+saving
+loading
+add greedy meshing
+add player
+add chunk/block upating
+ 
+
+investigate world node signals for signaling when chunks need to be updated etc

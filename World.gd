@@ -1,13 +1,12 @@
 extends Node3D
 class_name World
-#https://docs.godotengine.org/en/stable/tutorials/shaders/your_first_shader/your_first_3d_shader.html
 const chunk_size := 16
 var noise
 
-var queued_chunks  = []
-var loaded_chunks  = {}
-var working_chunks = {}
-var chunk_reference_count = {}
+var queued_chunks  = [] #chunks that were requested but not enough threads were available, so they are placed in here
+var loaded_chunks  = {} #chunks that are currently loaded in the scene	
+var working_chunks = {} #chunks that are being worked on
+var chunk_reference_count = {} #tracks references to chunks to allow for culling
 var load_threads = {}  # Keep track of active threads.
 var thread_pool = []
 const max_threads := 4
@@ -29,12 +28,11 @@ func _ready():
 		var thread = Thread.new()
 		thread_pool.append(thread)
 
-	var radius = 6
+	var radius = 25
 
-	for x in range(radius):
-		for z in range(radius):
-			for y in range(radius):	
-				add_chunk(x-radius/2,y-radius/2,z-radius/2)
+
+	for ay in range(2):	
+				spiral_traversal($Camera3D.position, radius, ay)
 
 		
 
@@ -59,6 +57,9 @@ func _process(delta):
 	for position in queued_chunks:
 		var p:Vector3 = position
 		add_chunk(p.x,p.y,p.z)
+		
+	
+	update_pos_text()
 		
 
 		
@@ -120,4 +121,51 @@ func get_chunk(x, y, z):
 		return  null# chunk currently being worked on in another thread
 		
 	return loaded_chunks[key]
+	
+func update_pos_text():
+	var player_translation = $Camera3D.position
+	var player_x = int(player_translation.x)
+	var player_y = int(player_translation.y)
+	var player_z = int(player_translation.z)
+	$Camera3D/Label2.text = "x:" + str(player_x) + " z:" + str(player_z) + " y:" + str(player_y)
+	$Camera3D/Label3.text = "x:" + str(player_x/chunk_size) + " z:" + str(player_z/chunk_size) + " y:" + str(player_y/chunk_size)
+	
+func spiral_traversal(player_position, max_radius, y_level):
+	"""
+	Traverse chunks in a spiral pattern outward from the player's position.
+	
+	:param player_position: Tuple (px, py) of the player's position in chunk coordinates.
+	:param max_radius: Maximum distance in chunks to render outward.
+	:param z_level: Fixed z-coordinate for the chunks (default is 0).
+	"""
+	var directions = []
+	var px = player_position.x
+	var pz = player_position.z
+	directions = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
+
+	var ax = px
+	var az = pz
+
+	var step_size = 1
+	var sign = -1
+	while step_size < max_radius+1:
+		if(step_size % 2):
+			#if step is even( should be pos)
+			sign = -1
+		else:
+			sign = 1
+			
+		add_chunk(ax,y_level,az)
+		
+		for sx in step_size:
+			ax = ax + (1 * sign)
+			add_chunk(ax,y_level,az)
+		for sz in step_size:
+			az = az + (1 * sign)
+			add_chunk(ax,y_level,az)
+		step_size = step_size + 1
+				
+		
+
+
 	

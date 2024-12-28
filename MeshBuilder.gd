@@ -11,7 +11,7 @@ func _process(delta: float) -> void:
 	pass
 
 
-
+##todo defer to queue to wait for neibours to generate
 func _on_world_chunk_loaded(position: Vector3, chunk: Chunk) -> void:
 	if(!chunk.isEmpty):
 		buildScript = preload("res://ChunkMeshBuilder.gd").new()
