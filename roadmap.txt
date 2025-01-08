@@ -1,5 +1,4 @@
 
-add chunk neibour detection and communication
 regions
 simple gui
 saving

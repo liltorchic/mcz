@@ -13,26 +13,76 @@ script = ExtResource("1_mp8si")
 script = ExtResource("2_3y8d5")
 
 [node name="Camera3D" type="Camera3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 79.3386, 0)
 script = ExtResource("2_sentv")
 
-[node name="Label" type="Label" parent="World/Camera3D"]
+[node name="devui" type="Node" parent="World/Camera3D"]
+
+[node name="Label" type="Label" parent="World/Camera3D/devui"]
+offset_top = 1.0
 offset_right = 136.0
-offset_bottom = 139.0
+offset_bottom = 52.0
 text = " player block pos
  player chunk pos"
 horizontal_alignment = 2
 
-[node name="Label2" type="Label" parent="World/Camera3D"]
+[node name="Label2" type="Label" parent="World/Camera3D/devui"]
 offset_left = 138.0
 offset_top = 2.0
 offset_right = 178.0
 offset_bottom = 25.0
 
-[node name="Label3" type="Label" parent="World/Camera3D"]
+[node name="Label3" type="Label" parent="World/Camera3D/devui"]
 offset_left = 141.0
 offset_top = 30.0
 offset_right = 218.0
 offset_bottom = 53.0
+
+[node name="Label4" type="Label" parent="World/Camera3D/devui"]
+offset_left = 1051.0
+offset_top = 6.0
+offset_right = 1148.0
+offset_bottom = 29.0
+text = "neighbours: "
+
+[node name="Label5" type="Label" parent="World/Camera3D/devui"]
+offset_left = 747.0
+offset_top = 30.0
+offset_right = 1148.0
+offset_bottom = 472.0
+autowrap_mode = 3
+
+[node name="Label6" type="Label" parent="World/Camera3D/devui"]
+offset_left = 1.0
+offset_top = 50.0
+offset_right = 41.0
+offset_bottom = 73.0
+text = "player chunk local pos"
+
+[node name="Label7" type="Label" parent="World/Camera3D/devui"]
+offset_left = 176.0
+offset_top = 53.0
+offset_right = 322.0
+offset_bottom = 76.0
+
+[node name="Label8" type="Label" parent="World/Camera3D/devui"]
+offset_left = 622.0
+offset_top = 2.0
+offset_right = 1019.0
+offset_bottom = 25.0
+
+[node name="Label9" type="Label" parent="World/Camera3D/devui"]
+offset_left = -1.0
+offset_top = 74.0
+offset_right = 39.0
+offset_bottom = 97.0
+text = "is_modified"
+
+[node name="Label10" type="Label" parent="World/Camera3D/devui"]
+offset_left = 89.0
+offset_top = 71.0
+offset_right = 129.0
+offset_bottom = 94.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 129.334, 551.473, 82.1164)

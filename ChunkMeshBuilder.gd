@@ -2,6 +2,7 @@ extends MeshInstance3D
 
 var chunk: Chunk
 var chunk_size
+var world_ref:World 
 # Mesh arrays
 var vertices = PackedVector3Array()
 var uvs = PackedVector2Array()
@@ -9,25 +10,34 @@ var normals = PackedVector3Array()
 var indices = PackedInt32Array()
 var material:StandardMaterial3D = preload("res://blockdev.tres")
 
-func _ready():
-	chunk_size = World.chunk_size
+var surface = []
+var arr_mesh
 
+func setup(_chunk):
+	self.chunk = _chunk
+	self.position = chunk.position
+	self.chunk_size = WorldHelper.chunk_size
+	chunk.set_mesh(self)
+
+
+func generate():
+	chunk.set_modified(false)
+	#print("generating " + str(position) + " : "+ str(chunk))
+	surface = []
+	arr_mesh = ArrayMesh.new()
 	vertices.clear()
 	indices.clear()
 	normals.clear()
 	uvs.clear()
 	
-	var surface = []
-	var arr_mesh = ArrayMesh.new()
-	
-	self.position = chunk.position
+	if(chunk.isEmpty):
+		return
 	
 	for ay in range(chunk_size):
-		if(chunk.y_slice_dict[ay] > 1):#skip slices that are empty
-			for ax in range(chunk_size):
-				for az in range(chunk_size):
-					if chunk.chunk_data[ay][ax][az] == 1:  # Solid block
-						add_block_mesh(Vector3(ax, ay, az))
+		for ax in range(chunk_size):
+			for az in range(chunk_size):
+				if chunk.get_block(Vector3i(ax,ay,az)) == 1:  # Solid block
+					add_block_mesh(Vector3(ax, ay, az))
 	
 	surface.resize(Mesh.ARRAY_MAX)
 	surface[Mesh.ARRAY_VERTEX] = vertices
@@ -37,19 +47,15 @@ func _ready():
 	arr_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surface)
 	self.mesh = arr_mesh
 	self.material_override = material
-	#print("new mesh node added at " + str(chunk.position))
-	#self.mesh = BoxMesh.new()
-
-
+	
 
 # Add a block's visible faces to the mesh
 #block pos is local coords ie 0-16
 func add_block_mesh(block_pos):
 	
-	for i in range(6):  # 6 faces
-		var neighbor_pos:Vector3 = block_pos + NEIGHBOR_OFFSETS[i]
-		if is_face_visible(neighbor_pos):
-			var face = FACE_DATA[i]
+	for faces in range(6):  # 6 faces
+		if is_face_visible(block_pos, WorldHelper.NEIGHBOR_OFFSETS[faces]):
+			var face = FACE_DATA[faces]
 			var base_index = vertices.size()
 			
 			# Add face vertices
@@ -68,37 +74,44 @@ func add_block_mesh(block_pos):
 
 # Check if a face is visible
 # neighbor_pos is local coords ie 0-16
-func is_face_visible(neighbor_pos: Vector3) -> bool:
-	if  (neighbor_pos.x < 0 ):#side
-		return true
-	elif(neighbor_pos.x >= chunk_size):#side
-		return true
-	elif(neighbor_pos.y < 0):#top
-		return true
-	elif(neighbor_pos.y >= chunk_size):#bottom
-		return true
-	elif(neighbor_pos.z < 0):#front
-		return true
-	elif(neighbor_pos.z >= chunk_size):#back
-		return true
-	else:
-		return chunk.chunk_data[neighbor_pos.y][neighbor_pos.x][neighbor_pos.z] == 0  # Only air blocks are considered visible
+func is_face_visible(pos: Vector3, offset: Vector3) -> bool:
+	var neighbouring_chunk_pos:Vector3i = self.position + offset
+	var neighbours = chunk.get_chunk_neigbour_ref()
+	var n_chunk = null
+	var query_pos = pos + offset
+	if(neighbours.has(neighbouring_chunk_pos)):
+		n_chunk = neighbours[neighbouring_chunk_pos]
 
+	#the face on the edge of the chunk
+	if((query_pos.x < 0 or query_pos.x > chunk_size-1) or (query_pos.y < 0 or query_pos.y > chunk_size-1) or (query_pos.z < 0 or query_pos.z > chunk_size-1)):
+		if(n_chunk != null):
+			return n_chunk.get_block(_calc_chunk_pos_wrap(query_pos)) == 0
+		else:
+			return chunk.get_block(pos) == 1#this over rerders faces
+			
+	return chunk.get_block(query_pos) == 0
+		
 
-func setup(_pos, _chunk):
-	self.position = _pos
-	self.chunk = _chunk
+func _calc_chunk_pos_wrap(input :Vector3i)-> Vector3i:
+		var cz = WorldHelper.chunk_size
+		var result = input
 
-
-# Neighbor offsets for checking adjacent blocks
-const NEIGHBOR_OFFSETS = [
-	Vector3(1, 0, 0),  # Right
-	Vector3(-1, 0, 0), # Left
-	Vector3(0, 1, 0),  # Top
-	Vector3(0, -1, 0), # Bottom
-	Vector3(0, 0, 1),  # Front
-	Vector3(0, 0, -1)  # Back
-]
+		if(input.x < 0):
+			result.x = cz-1
+		elif(input.x > cz-1):
+			result.x = 0
+				
+		if(input.y < 0):
+			result.y = cz-1
+		elif(input.y > cz-1):
+				result.y = 0
+				
+		if(input.z < 0):
+			result.z = cz-1
+		elif(input.z > cz-1):
+			result.z = 0	
+			
+		return result
 
 const FACE_DATA = [
 	# Right face
