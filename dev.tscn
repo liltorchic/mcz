@@ -84,6 +84,20 @@ offset_top = 71.0
 offset_right = 129.0
 offset_bottom = 94.0
 
+[node name="Button" type="Button" parent="World/Camera3D/devui"]
+offset_left = 1.0
+offset_top = 95.0
+offset_right = 106.0
+offset_bottom = 126.0
+text = "set modified"
+
+[node name="Button2" type="Button" parent="World/Camera3D/devui"]
+offset_left = -1.0
+offset_top = 136.0
+offset_right = 109.0
+offset_bottom = 167.0
+text = "update neigh"
+
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 129.334, 551.473, 82.1164)
 light_color = Color(1, 1, 0.74902, 1)

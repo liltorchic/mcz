@@ -19,6 +19,11 @@ signal chunk_loaded(chunk: Chunk)
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	$Camera3D/devui/Button.pressed.connect(self._button_pressed)
+	$Camera3D/devui/Button2.pressed.connect(self._button_pressed_2)
+	
+	
+	
 	randomize()
 	noise = FastNoiseLite.new()
 	noise.noise_type = FastNoiseLite.TYPE_PERLIN
@@ -30,9 +35,9 @@ func _ready():
 		var thread = Thread.new()
 		thread_pool.append(thread)
 
-	var radius = 10
+	var radius = 4
 
-	for ay in range(4):	
+	for ay in range(2):	
 				_spiral_traversal_chunk_generation($Camera3D.position, radius, ay)
 	#_generate_one_chunk()
 		
@@ -78,9 +83,10 @@ func _update_chunk_queue():
 		
 func _regenerate_modified_chunk_mesh():
 	for pos in world_loaded_chunks:	
-		if(world_loaded_chunks[pos].is_modified == true):
+		if(world_loaded_chunks[pos].get_modified() == true):
 			world_loaded_chunks[pos].regenerate_mesh()
-			#print("regenerating " + str(pos) + " : "+ str(world_loaded_chunks[pos]))
+			print("regenerating " + str(pos) + " : "+ str(world_loaded_chunks[pos]) + " isModified: " + str(world_loaded_chunks[pos].get_modified()))
+			world_loaded_chunks[pos].set_modified(false)
 			
 func _get_available_thread():
 	# Find the first unused thread from the pool
@@ -163,11 +169,11 @@ func get_new_chunk_neighbours(chunk: Chunk) -> Dictionary:
 				var neighbor_chunk:Chunk = get_chunk(neighbor_pos)
 				result[neighbor_pos] = neighbor_chunk
 				if(result[neighbor_pos]  != null):
-					result[neighbor_pos].is_modified = true												
+					result[neighbor_pos].set_modified(true)											
 					var neighbour_neighbours = result[neighbor_pos].get_chunk_neigbour_ref()
 					if(neighbour_neighbours.has(chunk_pos)):
 						neighbour_neighbours[chunk_pos] = chunk	
-						neighbour_neighbours[chunk_pos].is_modified = true					
+						neighbour_neighbours[chunk_pos].set_modified(true)					
 	return result	
 
 		
@@ -190,7 +196,7 @@ func _update_pos_text():
 	$Camera3D/devui/Label7.text = "x:" + str(player_x - player_x/chunk_size*chunk_size)  + " y:" + str(player_y - player_y/chunk_size*chunk_size)+ " z:" + str(player_z - player_z/chunk_size*chunk_size)
 	$Camera3D/devui/Label8.text = str(get_chunk(pos/chunk_size))
 	if(get_chunk(pos/chunk_size) != null):
-		$Camera3D/devui/Label10.text = str(get_chunk(pos/chunk_size).is_modified)
+		$Camera3D/devui/Label10.text = str(get_chunk(pos/chunk_size).get_modified())
 	else:
 		$Camera3D/devui/Label10.text = "null"
 	
@@ -206,6 +212,29 @@ func _generate_one_chunk():
 	_add_chunk_a(0,1,1)
 	_add_chunk_a(1,1,1)
 	
+
+	
+
+func _button_pressed():
+	var chunk_size = WorldHelper.chunk_size
+	var player_translation = $Camera3D.position
+	var player_x = int(player_translation.x)
+	var player_y = int(player_translation.y)
+	var player_z = int(player_translation.z)
+	var pos = Vector3i(player_x,player_y,player_z)
+	if(get_chunk(pos/chunk_size) != null):
+		get_chunk(pos/chunk_size).set_modified(true)
+		
+		
+func _button_pressed_2():
+	var chunk_size = WorldHelper.chunk_size
+	var player_translation = $Camera3D.position
+	var player_x = int(player_translation.x)
+	var player_y = int(player_translation.y)
+	var player_z = int(player_translation.z)
+	var pos = Vector3i(player_x,player_y,player_z)
+	if(get_chunk(pos/chunk_size) != null):
+		get_new_chunk_neighbours(get_chunk(pos/chunk_size))
 	
 	
 func _spiral_traversal_chunk_generation(player_position, max_radius, y_level):

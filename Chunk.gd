@@ -99,3 +99,6 @@ func get_mesh() -> MeshInstance3D:
 	
 func set_modified(flag:bool):
 	self.is_modified = flag
+	
+func get_modified():
+	return self.is_modified
