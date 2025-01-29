@@ -1,10 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
-.svg
-.tmp
-.import
-/android/
-*.godot
-*.tmp
 *.svg
+*.tmp
 *.import
+/android/
+
