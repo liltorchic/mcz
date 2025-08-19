@@ -35,7 +35,7 @@ func _ready():
 		var thread = Thread.new()
 		thread_pool.append(thread)
 
-	var radius = 4
+	var radius = 32
 
 	for ay in range(2):	
 				_spiral_traversal_chunk_generation($Camera3D.position, radius, ay)
@@ -71,9 +71,9 @@ func _update_chunk_neighbours():
 		var ref = world_loaded_chunks[chunk].get_chunk_neigbour_ref()
 		for pos in ref:
 			if(ref[pos] == null):
-				counter + counter + 1 
+				counter = counter + 1 
 		if(counter > 0):
-			get_new_chunk_neighbours(chunk)
+			get_new_chunk_neighbours(world_loaded_chunks[chunk])
 			
 			
 func _update_chunk_queue():			

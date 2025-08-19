@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://duk86u6usrlug"]
 
-[ext_resource type="Script" path="res://World.gd" id="1_mp8si"]
-[ext_resource type="Script" path="res://MeshBuilder.gd" id="2_3y8d5"]
-[ext_resource type="Script" path="res://free_camera.gd" id="2_sentv"]
+[ext_resource type="Script" uid="uid://bdbmcp1vlx1ct" path="res://World.gd" id="1_mp8si"]
+[ext_resource type="Script" uid="uid://dm16emdl653v4" path="res://MeshBuilder.gd" id="2_3y8d5"]
+[ext_resource type="Script" uid="uid://b6r7tccf5to3a" path="res://free_camera.gd" id="2_sentv"]
 
 [node name="Node3D" type="Node3D"]
 

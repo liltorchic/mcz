@@ -52,67 +52,74 @@ func generate():
 
 # Add a block's visible faces to the mesh
 #block pos is local coords ie 0-16
-func _add_block_mesh(block_pos):
+func _add_block_mesh(block_pos: Vector3i):
+	var my_chunk_neighbours: Dictionary = chunk.get_chunk_neigbour_ref()
+	var query_pos: Vector3i
 	
-	var my_chunk_neighbours:Dictionary = chunk.get_chunk_neigbour_ref()
-	var query_pos
-	
-	#if we are at the edge of the chunk omg
-	if((block_pos.x == 0 or block_pos.x == chunk_size-1) or (block_pos.y == 0 or block_pos.y == chunk_size-1) or (block_pos.z == 0 or block_pos.z == chunk_size-1)):
-		for faces in range(6):  # 6 faces
-			var face_pos = block_pos + WorldHelper.NEIGHBOR_OFFSETS[faces]
+	# Are we at a chunk edge?
+	if block_pos.x == 0 or block_pos.x == chunk_size - 1 \
+	 or block_pos.y == 0 or block_pos.y == chunk_size - 1 \
+	 or block_pos.z == 0 or block_pos.z == chunk_size - 1:
+		
+		for face in range(6): # 6 faces
+			var face_pos: Vector3i = block_pos + Vector3i(WorldHelper.NEIGHBOR_OFFSETS[face])
 			query_pos = _calc_chunk_pos_wrap(face_pos)
-			
-			#get chunk that face we are quering for is touching
-				#get it by figuring out which direction to step
-			var my_chunk_pos = Vector3i(self.position)
-			var query_chunk_pos:Vector3i
-				
-			if(face_pos.x < 0):#we are on x = 0 looking x-1
-				query_chunk_pos = my_chunk_pos + Vector3i(-1,0,0)
-			elif(face_pos.x > 16):#we are on x = 16 looking x+1
-				query_chunk_pos = my_chunk_pos + Vector3i(1,0,0) 
-			elif(face_pos.y < 0):#we are on y = 0 looking y-1
-				query_chunk_pos = my_chunk_pos + Vector3i(0,-1,0)
-			elif(face_pos.y > 16):#we are on y = 16 looking y+1
-				query_chunk_pos = my_chunk_pos + Vector3i(0,1,0)
-			elif(face_pos.z < 0):#we are on z = 0 looking z-1
-				query_chunk_pos = my_chunk_pos + Vector3i(0,0,-1)
-			elif(face_pos.z > 16):#we are on z = 16 looking z+1
-				query_chunk_pos = my_chunk_pos + Vector3i(1,0,1)
-			else:#we arent on a chunk edge
-				if(chunk.get_block(query_pos) == 0):
-					_add_face(block_pos,faces)
-					break
-				
-			if(query_chunk_pos != null):
-				if(my_chunk_neighbours.has(query_chunk_pos)):
-					if(my_chunk_neighbours[query_chunk_pos] != null):
-						if(my_chunk_neighbours[query_chunk_pos].get_block(query_pos) == 0):
-							_add_face(block_pos,faces)		
-			elif((query_chunk_pos == null)):#if the chunk does not exist
-				_add_face(block_pos,faces)
-	
-	#if we are NOT at the edge of the chunk								
+
+			# Figure out which neighbor chunk to ask (if any)
+			var my_chunk_pos: Vector3i = Vector3i(self.position) / chunk_size
+			var query_chunk_pos: Vector3i = my_chunk_pos
+
+			if face_pos.x < 0:
+				query_chunk_pos += Vector3i(-1, 0, 0)
+			elif face_pos.x > chunk_size - 1:
+				query_chunk_pos += Vector3i(1, 0, 0)
+			elif face_pos.y < 0:
+				query_chunk_pos += Vector3i(0, -1, 0)
+			elif face_pos.y > chunk_size - 1:
+				query_chunk_pos += Vector3i(0, 1, 0)
+			elif face_pos.z < 0:
+				query_chunk_pos += Vector3i(0, 0, -1)
+			elif face_pos.z > chunk_size - 1:
+				query_chunk_pos += Vector3i(0, 0, 1)
+
+			# If still inside this chunk
+			if query_chunk_pos == my_chunk_pos:
+				if chunk.get_block(face_pos) == 0:
+					_add_face(block_pos, face)
+			else:
+				# Look into neighbor
+				if my_chunk_neighbours.has(query_chunk_pos):
+					var neighbor: Chunk = my_chunk_neighbours[query_chunk_pos]
+					if neighbor != null and neighbor.get_block(query_pos) == 0:
+						_add_face(block_pos, face)
+				else:
+					# Neighbor chunk not loaded, assume visible
+					_add_face(block_pos, face)
 	else:
-		for faces in range(6):  # 6 faces
-			query_pos = block_pos + WorldHelper.NEIGHBOR_OFFSETS[faces]
-			if(chunk.get_block(query_pos) == 0):
-				_add_face(block_pos,faces)
+		# Not on edge → just check inside current chunk
+		for face in range(6):
+			query_pos = block_pos + Vector3i(WorldHelper.NEIGHBOR_OFFSETS[face])
+			if chunk.get_block(query_pos) == 0:
+				_add_face(block_pos, face)
 
 
 
-func _add_face(_block_pos, _faces):
+func _add_face(_block_pos: Vector3i, _faces: int):
 	var face = WorldHelper.FACE_DATA[_faces]
 	var base_index = vertices.size()
-				
-				# Add face vertices
-	for vertex in face["vertices"]:
-		vertices.append(vertex + _block_pos)
+
+	var uv_template = [
+		Vector2(0, 0),
+		Vector2(1, 0),
+		Vector2(1, 1),
+		Vector2(0, 1),
+	]
+
+	for i in range(4):
+		vertices.append(face["vertices"][i] + Vector3(_block_pos))
 		normals.append(face["normal"])
-		uvs.append(Vector2(face["vertices"][0].x, face["vertices"][0].z))  # UV for texture  # Basic UVs
-				
-	# Add face indices
+		uvs.append(uv_template[i])
+
 	indices.append(base_index + 0)
 	indices.append(base_index + 1)
 	indices.append(base_index + 2)
