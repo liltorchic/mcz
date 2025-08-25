@@ -34,12 +34,9 @@ func _ready():
 	for i in range(WorldHelper.chunk_builder_max_threads):
 		var thread = Thread.new()
 		thread_pool.append(thread)
+		
+	
 
-	var radius = 32
-
-	for ay in range(2):	
-				_spiral_traversal_chunk_generation($Camera3D.position, radius, ay)
-	#_generate_one_chunk()
 		
 func _process(delta):
 
@@ -48,7 +45,14 @@ func _process(delta):
 	call_deferred("_update_chunk_neighbours")#update chunk neighbour dictionary
 	call_deferred("_regenerate_modified_chunk_mesh")
 	_update_pos_text()
-	
+	var cs = WorldHelper.chunk_size
+	var player_chunk := Vector3i(
+		floor($Camera3D.position.x / cs),
+		floor($Camera3D.position.y / cs),
+		floor($Camera3D.position.z / cs)
+	)
+	_spiral_traversal_chunk_generation(player_chunk, 6)  # example radius
+
 func _threaded_chunk_process():
 	var finished_positions = []
 	
@@ -85,7 +89,7 @@ func _regenerate_modified_chunk_mesh():
 	for pos in world_loaded_chunks:	
 		if(world_loaded_chunks[pos].get_modified() == true):
 			world_loaded_chunks[pos].regenerate_mesh()
-			print("regenerating " + str(pos) + " : "+ str(world_loaded_chunks[pos]) + " isModified: " + str(world_loaded_chunks[pos].get_modified()))
+			#print("regenerating " + str(pos) + " : "+ str(world_loaded_chunks[pos]) + " isModified: " + str(world_loaded_chunks[pos].get_modified()))
 			world_loaded_chunks[pos].set_modified(false)
 			
 func _get_available_thread():
@@ -95,26 +99,24 @@ func _get_available_thread():
 			return thread
 	return null  # No available threads
 
-func _load_chunk_async(arr):
+func _load_chunk_async(pos: Vector3i) -> Dictionary:
 	var chunk_size = WorldHelper.chunk_size
-	var x = arr[0] 
-	var y = arr[1] 
-	var z = arr[2]
-	var key = str(x)+ "," + str(y) + "," + str(z)
-	var chunk: Chunk
-	
-	chunk = Chunk.new(noise, x, y, z, chunk_size)
-	chunk.position = Vector3(x * chunk_size , y * chunk_size, z * chunk_size)
+	var x = pos.x
+	var y = pos.y
+	var z = pos.z
+	var key = "%d,%d,%d" % [x, y, z]
+
+	var chunk := Chunk.new(noise, x, y, z, chunk_size)
+	chunk.position = Vector3(x * chunk_size, y * chunk_size, z * chunk_size)
 	chunk.world_ref = self
 	chunk.load_data()
 	chunk.assign_chunk_neigbour_ref(get_new_chunk_neighbours(chunk))
-	
-
 	return {"position": key, "chunk": chunk}
 	
 	
 func _on_thread_complete( _thread, chunk_tuple):
 	var key = str(chunk_tuple.position)
+	print("chunk ready:", key)
 	world_loaded_chunks[key] = chunk_tuple.chunk
 	world_chunk_reference_count[key] = 0
 	working_chunks[key] = 0
@@ -137,13 +139,18 @@ func add_chunk(pos:Vector3i):
 			world_queued_chunks.erase(pos)
 		world_chunk_reference_count[key] = 1
 		load_threads[key] = available_thread
-		available_thread.start(_load_chunk_async.bind(pos))
+		var callable := Callable(self, "_load_chunk_async").bind(pos)
+		var err = available_thread.start(callable)
+		if err != OK:
+			push_error("Thread start failed (%s) for %s" % [str(err), key])
+			return
 		working_chunks[key] = 1
+		print("adding chunk: " + key)
 	elif(!world_queued_chunks.has(pos)):
 		world_queued_chunks.append(pos)	
 
 #world space
-func get_chunk(pos:Vector3i):
+func get_chunk(pos:Vector3i) -> Chunk:
 	var key = str(pos.x) + "," + str(pos.y) + "," + str(pos.z)
 	if(!world_loaded_chunks.has(key)):
 		return null# Chunk not loaded
@@ -199,21 +206,6 @@ func _update_pos_text():
 		$Camera3D/devui/Label10.text = str(get_chunk(pos/chunk_size).get_modified())
 	else:
 		$Camera3D/devui/Label10.text = "null"
-	
-	
-func _generate_one_chunk():
-	_add_chunk_a(0,0,0)
-	_add_chunk_a(1,0,0)
-	_add_chunk_a(0,0,1)
-	_add_chunk_a(1,0,1)
-	
-	_add_chunk_a(0,1,0)
-	_add_chunk_a(1,1,0)
-	_add_chunk_a(0,1,1)
-	_add_chunk_a(1,1,1)
-	
-
-	
 
 func _button_pressed():
 	var chunk_size = WorldHelper.chunk_size
@@ -236,38 +228,50 @@ func _button_pressed_2():
 	if(get_chunk(pos/chunk_size) != null):
 		get_new_chunk_neighbours(get_chunk(pos/chunk_size))
 	
-	
-func _spiral_traversal_chunk_generation(player_position, max_radius, y_level):
-	"""
-	Traverse chunks in a spiral pattern outward from the player's position.
-	
-	:param player_position: Tuple (px, py) of the player's position in chunk coordinates.
-	:param max_radius: Maximum distance in chunks to render outward.
-	:param z_level: Fixed z-coordinate for the chunks (default is 0).
-	"""
-	var directions = []
-	var px = player_position.x
-	var pz = player_position.z
-	directions = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
+# returns true when the column is "resolved" (fullish or cutoff), false if still loading
+func _column_chunk_gen_chunk_coords(chunk_coords: Vector3i) -> bool:
+	var working_chunk: Vector3i = chunk_coords
+	var min_chunk_y := -8
 
-	var ax = px
-	var az = pz
+	while true:
+		var c := get_chunk(working_chunk)
+		if c == null:
+			add_chunk(working_chunk)
+			return false  # queued; try again next tick
 
-	var step_size = 1
-	var sign = -1
-	while step_size < max_radius+1:
-		if(step_size % 2):
-			#if step is even( should be pos)
-			sign = -1
+		# empty → keep going down (but stop at cutoff)
+		if c.is_empty():
+			working_chunk.y -= 1
+			if working_chunk.y <= min_chunk_y:
+				return true
+			continue
+
+		# non-empty → stop if "fullish" else step down
+		if c.is_full() or c.bottom_layer_is_solid():
+			return true
 		else:
-			sign = 1
-			
-		_add_chunk_a(ax,y_level,az)
-		
-		for sx in step_size:
-			ax = ax + (1 * sign)
-			_add_chunk_a(ax,y_level,az)
-		for sz in step_size:
-			az = az + (1 * sign)
-			_add_chunk_a(ax,y_level,az)
-		step_size = step_size + 1
+			working_chunk.y -= 1
+			if working_chunk.y <= min_chunk_y:
+				return true
+	return false
+	
+func _spiral_traversal_chunk_generation(player_chunk: Vector3i, max_radius: int) -> void:
+	var dirs = [Vector2i(1,0), Vector2i(0,1), Vector2i(-1,0), Vector2i(0,-1)]
+	var ax = player_chunk.x
+	var az = player_chunk.z
+	var py = player_chunk.y
+	var step = 1
+	var d = 0
+
+	# (optional) include center first
+	_column_chunk_gen_chunk_coords(Vector3i(ax, py, az))
+
+	while step <= max_radius:
+		for _leg in range(2):
+			var dir = dirs[d % 4]
+			for _i in range(step):
+				ax += dir.x
+				az += dir.y
+				_column_chunk_gen_chunk_coords(Vector3i(ax, py, az))
+			d += 1
+		step += 1
